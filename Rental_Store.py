@@ -2,6 +2,7 @@
 # New Release is the most expensive, Comedy is the cheapest
 # 10 Customers, 3 types(Breezy, Hoarder, Regular)
 import random
+import time
 from collections import Counter
 
 # Global variables
@@ -13,7 +14,7 @@ class Videos:
         __prices = [10, 7, 3, 5, 4]
         self.v_id = id
         self.v_category = category
-        self.price = prices[self.v_category]
+        self.price = __prices[self.v_category]
     def Get_price(self):
         # New Release(0): $10 per night, Drama(1): $7 per night, Comedy(2): $3 per night, 
         # Romance(3): $5 per night, Horror(4): $4 per night
@@ -29,8 +30,21 @@ class Customers:
         self.rentals = []
     def Check_illegal(self):
         pass
-    def Rent_video(self):
+    def Rent_video(self)    :
         pass
+    def Return_video(self, day):
+        return_list = []
+        for i in self.rentals:
+            if(i.Check_return(day)):
+                return_list.append(i)
+        if(len(return_list)):
+            for i in return_list:
+                for j in i.r_videos:
+                    if(j in self.rent_videos):
+                        del self.rent_videos[self.rent_videos.index(j)]
+                if(i in self.rentals):
+                    del self.rentals[self.rentals.index(i)]
+        return return_list
     def info(self):
         return print(self.c_id, self.c_type)
 
@@ -40,12 +54,13 @@ class Breezy(Customers):
     def Check_illegal(self):
         return True if len(self.rent_videos) < 3 else False
     def Rent_video(self):
-        v_to_rent, n_to_rent = 0
+        v_to_rent = 0
+        n_to_rent = 0
         v_type = Counter()
         if(self.Check_illegal()): # Breezy(Rent 1 or 2 videos for 1 or 2 nights)
             v_to_rent = random.randint(1, 3 - len(self.rent_videos))
             n_to_rent = random.randint(1, 2)
-            v_type = Counter([random.choices(range(0, 4), k = v_to_rent)]) # Customers choose video category
+            v_type = Counter(random.choices(range(0, 4), k = v_to_rent)) # Customers choose video category
             return v_to_rent, n_to_rent, v_type
         else: return 0, 0, Counter()
 
@@ -55,12 +70,13 @@ class Hoarder(Customers):
     def Check_illegal(self):
         return True if len(self.rent_videos) == 0 else False
     def Rent_video(self):
-        v_to_rent, n_to_rent = 0
+        v_to_rent = 0
+        n_to_rent = 0
         v_type = Counter()
         if(self.Check_illegal()): # Hoarder(Always rent 3 videos for 7 nights)
             v_to_rent = 3
             n_to_rent = 7
-            v_type = Counter([random.choices(range(0, 4), k = v_to_rent)]) # Customers choose video category
+            v_type = Counter(random.choices(range(0, 4), k = v_to_rent)) # Customers choose video category
             return v_to_rent, n_to_rent, v_type
         else: return 0, 0, Counter()
 
@@ -69,26 +85,33 @@ class Regular(Customers):
         super().__init__(id, category)
     def Check_illegal(self):
         return True if len(self.rent_videos) < 3 else False
-    def Rent_video():
-        v_to_rent, n_to_rent = 0
+    def Rent_video(self):
+        v_to_rent = 0
+        n_to_rent = 0
         v_type = Counter()
         if(self.Check_illegal()): # Regular(Rent 1 - 3 videos for 3 - 5 nights)
             v_to_rent = random.randint(1, 3 - len(self.rent_videos))
             n_to_rent = random.randint(3, 5)
-            v_type = Counter([random.choices(range(0, 4), k = v_to_rent)]) # Customers choose video category
+            v_type = Counter(random.choices(range(0, 4), k = v_to_rent)) # Customers choose video category
             return v_to_rent, n_to_rent, v_type
         else: return 0, 0, Counter()
 
 class Rental():
-    def __init__(self, c_id, c_type, night, videos):
+    def __init__(self, c_id, c_type, night, videos, day):
         self.c_name = c_id
         self.c_type = c_type
         self.r_night = night
         self.r_videos = videos
+        self.r_day = day + night
+        self.c_day = day
+    def Check_return(self, day):
+        return True if day == self.r_day else False
     def info(self):
+        print('================================================================')
         print('Customer ' + str(self.c_name) + ' rent: ')
         for i in self.r_videos:
             i.info()
+        print('for ' + str(self.r_night) + ' night at day ' + str(self.c_day))
 
 class Rental_Store:
     def __init__(self):
@@ -99,48 +122,59 @@ class Rental_Store:
         # Build videos
         for i in range(20):
             self.videos.append(Videos(i, random.randint(0, 4))) # 5 categories
+        print('Initial Inventory: ')
+        self.Current_info(0)
     def Check_inventory(self):
         return len(self.videos)
-    def Customer_rent(self, customer, v_to_rent, n_to_rent, v_type):
+    def Customer_rent(self, customer, v_to_rent, n_to_rent, v_type, day):
+        # Check valid
+        if(v_to_rent == 0 and n_to_rent == 0):
+            return
         # Check inventory
         if(self.Check_inventory() >= v_to_rent):
             valid_list = [] # Save current valid video_id to rent
             for k, v in v_type.items():
-                videos_list = []
-                if([x for x in self.videos if x.v_category == k].count() >= v): # Store has enough inventory
-                    videos_list.append(random.sample([x for x in self.videos if x.v_category == k], k = v))
-                    valid_list.append(videos_list)
-            if(len(valid_list) == len(v_type)): # Check all videos that customer rents is available
+                if(len([x for x in self.videos if x.v_category == k]) >= v): # Store has enough inventory
+                    valid_list.extend(random.sample([x for x in self.videos if x.v_category == k], k = v))
+            if(len(valid_list) == v_to_rent): # Check all videos that customer rents is available
                 # Build Rental
-                rent_out = []
-                for v_list in valid_list:
-                    for j in v_list:
-                        rent_out.append(j)
+                rent_out = valid_list.copy()
                 # Remove rented videos from store
                 for i in rent_out:
                     self.total_amount += (i.price * n_to_rent) # Record for Store total amount
                     del self.videos[self.videos.index(i)]
-                c_rental = Rental(customer.c_id, customer.c_type, n_to_rent, rent_out)
+                c_rental = Rental(customer.c_id, customer.c_type, n_to_rent, rent_out, day)
                 self.rentals.append(c_rental)
                 customer.rentals.append(c_rental)
                 customer.rent_videos.append([x for x in rent_out])
-                return True
+                return
             else:
-                return False
+                return
         else:
-            return False
+            return
+    def Customer_return(self, rental_list):
+        for i in rental_list:
+            for j in i.r_videos:
+                self.videos.append(j)
+            self.complete_rental.append(i)
+            del self.rentals[self.rentals.index(i)]
     def Current_info(self, day):
         # show every information per day
+        print('================================================================')
         print('Day: ', day)
         print('Videos: ')
-        if(self.check_inventory()):
+        if(self.Check_inventory()):
             for i in range(5):
-                print(video_category[i] + ' has ' + str(Counter(self.videos.values())[i]))
+                print(video_category[i] + ' has ' + str(len([x for x in self.videos if x.v_category == i])))
         else: print('There is no inventory in store today !')
-        print('Today Complete Rental: ')
+    def info(self):
+        # show all information
+        print('================================================================')
+        print('All Completed Rentals: ')
         for i in self.complete_rental:
             i.info()
-        self.complete_rental.clear()
+        print('================================================================')
+        print('Total amount of money : ' + str(self.total_amount))
 
 def renting():
     # Build Rental Store
@@ -157,13 +191,22 @@ def renting():
     # 35 days and 34 nights
     for i in range(35):
         # Customer return videos before opening
-
+        return_temp = []
+        for c in customers:
+            return_temp.extend(c.Return_video(i + 1))
+        store.Customer_return(return_temp)
         # Rental Store open, and customers come to rent videos
         if(store.Check_inventory()):
             # inventory > 0, customers wil come
-            print('TO Do')
+            # A random number of customers will come
+            for j in random.sample(customers, k = random.randint(1, 10)):
+                v, n, t = j.Rent_video()
+                store.Customer_rent(j, v, n, t, i + 1)
         # End of day, show today's current store infomations
-        store.current_info(i)
-
+        store.Current_info(i + 1)
+        time.sleep(1)
+    # End of 35th, show every information
+    store.info()
+    
 if __name__ == '__main__':
     renting()
