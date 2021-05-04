@@ -5,7 +5,8 @@ import random
 import time
 from collections import Counter
 
-random.seed(7414)
+# Get fixed amount of videos and random choice
+#random.seed(7414)
 
 # Global variables
 video_category = ['New Release', 'Drama', 'Comedy', 'Romance', 'Horror']
@@ -175,7 +176,7 @@ class Rental_Store:
         print('Videos: ')
         if(self.Check_inventory()):
             for i in range(5):
-                print(video_category[i] + ' has ' + str(len([x for x in self.videos if x.v_category == i])))
+                print(video_category[i] + ' has ' + str(len([x for x in self.videos if x.v_category == i])) + ' movies')
         else: print('There is no inventory in store today !')
     def info(self):
         # show all information
