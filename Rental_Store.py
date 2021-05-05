@@ -214,7 +214,7 @@ def renting():
             customers.append(Hoarder(i, c_type))
         else: customers.append(Regular(i, c_type))
     # 35 days and 34 nights
-    for i in range(10):
+    for i in range(35):
         # Customer return videos before opening
         return_temp = []
         for c in customers:
