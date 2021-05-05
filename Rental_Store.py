@@ -27,8 +27,8 @@ class Videos:
 
 class Customers:
     def __init__(self, id, category):
-        self.c_id = id # Breezy(0), Hoarder(1), Regular(2)
-        self.c_type = category
+        self.c_id = id
+        self.c_type = category # Breezy(0), Hoarder(1), Regular(2)
         self.rent_videos = []
         self.rentals = []
     def Check_illegal(self):
@@ -66,8 +66,10 @@ class Breezy(Customers):
                 s_type.append(i.v_category)
             v_to_rent = random.randint(1, 3 - len(self.rent_videos))
             n_to_rent = random.randint(1, 2)
-            v_type = Counter(random.choices(s_type, k = v_to_rent)) # Customers choose video category
-            return v_to_rent, n_to_rent, v_type
+            if(len(store_videos) >= v_to_rent):
+                v_type = Counter(random.choices(s_type, k = v_to_rent)) # Customers choose video category
+                return v_to_rent, n_to_rent, v_type
+            else: return 0,0, Counter()
         else: return 0, 0, Counter()
 
 class Hoarder(Customers):
@@ -85,8 +87,10 @@ class Hoarder(Customers):
                 s_type.append(i.v_category)
             v_to_rent = 3
             n_to_rent = 7
-            v_type = Counter(random.choices(s_type, k = v_to_rent)) # Customers choose video category
-            return v_to_rent, n_to_rent, v_type
+            if(len(store_videos) >= v_to_rent):
+                v_type = Counter(random.choices(s_type, k = v_to_rent)) # Customers choose video category
+                return v_to_rent, n_to_rent, v_type
+            else: return 0,0, Counter()
         else: return 0, 0, Counter()
 
 class Regular(Customers):
@@ -104,8 +108,10 @@ class Regular(Customers):
                 s_type.append(i)
             v_to_rent = random.randint(1, 3 - len(self.rent_videos))
             n_to_rent = random.randint(3, 5)
-            v_type = Counter(random.choices(s_type, k = v_to_rent)) # Customers choose video category
-            return v_to_rent, n_to_rent, v_type
+            if(len(store_videos) >= v_to_rent):
+                v_type = Counter(random.choices(s_type, k = v_to_rent)) # Customers choose video category
+                return v_to_rent, n_to_rent, v_type
+            else: return 0,0, Counter()
         else: return 0, 0, Counter()
 
 class Rental():
@@ -124,6 +130,10 @@ class Rental():
         for i in self.r_videos:
             i.info()
         print('for ' + str(self.r_night) + ' night at day ' + str(self.c_day))
+        total_amount = 0
+        for i in self.r_videos:
+            total_amount += self.r_night * i.Get_price()
+        print('At total amount : $' + str(total_amount))
 
 class Rental_Store:
     def __init__(self):
@@ -204,7 +214,7 @@ def renting():
             customers.append(Hoarder(i, c_type))
         else: customers.append(Regular(i, c_type))
     # 35 days and 34 nights
-    for i in range(35):
+    for i in range(10):
         # Customer return videos before opening
         return_temp = []
         for c in customers:
